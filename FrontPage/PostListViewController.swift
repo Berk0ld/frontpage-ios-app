@@ -2,59 +2,64 @@ import UIKit
 import Apollo
 
 class PostListViewController: UITableViewController {
-  var posts: [AllPostsQuery.Data.Post]? {
-    didSet {
-      tableView.reloadData()
+    var posts: [AllPostsQuery.Data.Post]? {
+        didSet {
+            tableView.reloadData()
+        }
     }
-  }
-
-  // MARK: - View lifecycle
-
-  override func viewDidLoad() {
-    super.viewDidLoad()
-
-    tableView.rowHeight = UITableViewAutomaticDimension
-    tableView.estimatedRowHeight = 64
-  }
-
-  override func viewWillAppear(_ animated: Bool) {
-    super.viewWillAppear(animated)
-
-    loadData()
-  }
-
-  // MARK: - Data loading
-  
-  var watcher: GraphQLQueryWatcher<AllPostsQuery>?
-
-  func loadData() {
-    watcher = apollo.watch(query: AllPostsQuery()) { (result, error) in
-      if let error = error {
-        NSLog("Error while fetching query: \(error.localizedDescription)")
-        return
-      }
-
-      self.posts = result?.data?.posts
+    
+    // MARK: - View lifecycle
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        tableView.rowHeight = UITableViewAutomaticDimension
+        tableView.estimatedRowHeight = 64
     }
-  }
-
-  // MARK: - UITableViewDataSource
-
-  override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-    return posts?.count ?? 0
-  }
-
-  override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    guard let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as? PostTableViewCell else {
-      fatalError("Could not dequeue PostTableViewCell")
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        loadData()
     }
-
-    guard let post = posts?[indexPath.row] else {
-      fatalError("Could not find post at row \(indexPath.row)")
+    
+    // MARK: - Data loading
+    
+    var watcher: GraphQLQueryWatcher<AllPostsQuery>?
+    
+    func loadData() {
+        //        for i in 0...3 {
+        _ = apollo.fetch(
+            query: AllPostsQuery(),
+            cachePolicy: .fetchIgnoringCacheData) { (result, error) in
+                if error != nil {
+                    fatalError(String(describing: error))
+                    //                    print("Errored \(i)")
+                    //                        print("Error while fetching query: \(error.localizedDescription)")
+                }
+                self.posts = result?.data?.posts?.flatMap({ $0 })
+                //                self.posts = result?.data?.posts
+        }
+        //        }
     }
-
-    cell.configure(with: post.fragments.postDetails)
-
-    return cell
-  }
+    
+    // MARK: - UITableViewDataSource
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return posts?.count ?? 0
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as? PostTableViewCell else {
+            fatalError("Could not dequeue PostTableViewCell")
+        }
+        
+        guard let post = posts?[indexPath.row] else {
+            fatalError("Could not find post at row \(indexPath.row)")
+        }
+        
+        cell.configure(with: post.fragments.postDetails)
+        
+        return cell
+    }
 }
