@@ -3,3 +3,13 @@ query AllPosts {
     ...PostDetails
   }
 }
+
+query RefreshToken {
+    refresh {
+        ...Token
+    }
+}
+
+fragment Token on Token {
+    id
+}
